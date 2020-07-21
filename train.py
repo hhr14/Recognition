@@ -27,6 +27,7 @@ def train(train_data, validate_data, mymodel, device, recent_epoch):
     for e in range(hparams.epochs):
         print('\n\nepoch:', e)
         epoch_ave_loss_list = {'train': [], 'eval': []}
+        epoch_acc = 0
         for mode in ['train', 'eval']:
             if mode == 'train':
                 mymodel.train()
@@ -53,13 +54,14 @@ def train(train_data, validate_data, mymodel, device, recent_epoch):
                     optimizer.step()
                     print('step:', b, 'loss:', loss.item())
             epoch_ave_loss = np.mean(epoch_ave_loss_list[mode])
+            epoch_acc = num_correct / total
             print(mode + '_loss:', epoch_ave_loss, mode + '_language_acc:',
                   num_correct / total)
 
         if (e + 1) % hparams.check_point_distance == 0:
             epoch = e + 1 + recent_epoch
             mymodel_name = model_name + 'e' + str(epoch) + '-' + \
-                           format(np.mean(epoch_ave_loss_list['eval']), '.4f') + '.pt'
+                           format(epoch_acc, '.4f') + '.pt'
             torch.save({'model_state': mymodel.state_dict()},
                        mymodel_name)
 

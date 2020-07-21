@@ -3,6 +3,7 @@ import os
 from model import xvecTDNN
 import random
 import numpy as np
+import librosa
 
 
 def load_data(hparams):
@@ -51,21 +52,21 @@ def load_recent_model(model_path):
 
 def load_best_model(model_path, hparams):
     """
-    返回loss最小的权重文件
+    返回acc最好的权重文件
     :param path:
     :return:
     """
     model_list = os.listdir(model_path)
-    best_loss = 1e10
+    best_acc = 0
     best_file = None
     for model_file in model_list:
-        model_loss = float((model_file.split('-')[-1])[:-3])
+        model_acc = float((model_file.split('-')[-1])[:-3])
         if hparams.load_epoch is not None:
             epoch = int(((model_file.split('_')[-1]).split('-')[0])[1:])
             if epoch != hparams.load_epoch:
                 continue
-        if model_loss < best_loss:
-            best_loss = model_loss
+        if model_acc > best_acc:
+            best_acc = model_acc
             best_file = model_file
     print('best_file', best_file)
     return os.path.join(model_path, best_file)
@@ -92,3 +93,36 @@ def create_model(hparams, mode='train'):
         if hparams.model == 'xvecTDNN':
             mymodel.load_state_dict(checkpoint['model_state'])
         return mymodel
+
+
+def get_predict_file_list(predict_path):
+    if os.path.isfile(predict_path):
+        return [predict_path]
+    else:
+        result = []
+        predict_folder = os.listdir(predict_path)
+        predict_folder.sort()
+        for predict_file in predict_folder:
+            result.append(os.path.join(predict_path, predict_file))
+        return result
+
+
+def feature_extract(wav_path, mode='mel_spectrum'):
+    if mode == 'mel_spectrum':
+        pass
+    else:
+        raise ValueError('Unlegal feature extracting method!')
+
+
+def get_melspectrum(hparams, wav_path):
+    try:
+        y, sr = librosa.load(wav_path)
+    except Exception:
+        print('Error open', wav_path)
+        return None
+    else:
+        mel = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=hparams.n_mels, n_fft=hparams.frame_length,
+                                             hop_length=hparams.frame_shift)
+        logmel = librosa.power_to_db(mel ** 2)
+        # 这里可以看一下时长，如果平均时长比较长 可以采用这种方法 否则最好全局normalize
+        return librosa.util.normalize(logmel, axis=1)

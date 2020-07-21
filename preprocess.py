@@ -2,20 +2,8 @@ import librosa
 import argparse
 import os
 import numpy as np
-
-
-def get_melspectrum(hparams, wav_path):
-    try:
-        y, sr = librosa.load(wav_path)
-    except Exception:
-        print('Error open', wav_path)
-        return None
-    else:
-        mel = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=hparams.n_mels, n_fft=hparams.frame_length,
-                                          hop_length=hparams.frame_shift)
-        logmel = librosa.power_to_db(mel ** 2)
-        # 这里可以看一下时长，如果平均时长比较长 可以采用这种方法 否则最好全局normalize
-        return librosa.util.normalize(logmel, axis=1)
+from hparams import get_params
+from utils import get_melspectrum
 
 
 def preprocess(hparams):
@@ -49,13 +37,5 @@ def preprocess(hparams):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="preprocess hparams")
-    parser.add_argument('--input_dir', type=str, default='data/train')
-    parser.add_argument('--output_dir', type=str, default='data/train.txt')
-    parser.add_argument('--mel_output_dir', type=str, default='data/mel')
-    parser.add_argument('--n_mels', type=int, default=24)
-    parser.add_argument('--frame_length', type=int, default=400)
-    # 按照原文说法 这里帧长应该是400 即25ms
-    parser.add_argument('--frame_shift', type=int, default=160)
-    preprocess(parser.parse_args())
+    preprocess(get_params())
 
